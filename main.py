@@ -86,22 +86,29 @@ def change_cached_manual(denominations: Sequence[int], target: int):
 
 
 def change_direct(denominations: Sequence[int], target: int) -> tuple[int,...]:
-	"""Constructing a giant array where each axis represents
-	a denomination, and its index the number of coins included.
+	"""Constructing an array where each axis represents
+	a denomination, and its index the number of coins included."""
 
-	This is very inefficient because many of the elements will
-	end up larger than the target. You could slim it down by
-	limiting axis length when one coin is a multiple of another.
+	# Limiting the size of axes if they evenly divide a larger
+	# denomination. E.g. we never need to check more than 4 pennies,
+	# because it's always better to just use dimes instead.
+	axes = []
+	for i, coin in enumerate(denominations):
+		for largerCoin in denominations[i+1:]:
+			div, mod = divmod(largerCoin, coin)
+			if mod == 0:
+				axes.append(div)
+				break
+		else: #nobreak
+			axes.append(target // coin + 1)
 
-	It's still faster than recursion though (in python anyway).
-	"""
+	# def coinSum(*indices):
+	# 	return sum(a*b for a, b in zip(indices, denominations))
+	# money = np.fromfunction(coinSum, axes)
 
-	axes = [target // d + 1 for d in denominations]
+	# The same as above but slightly faster.
+	money = np.einsum("i..., i", np.indices(axes, dtype=int), denominations)
 
-	def coinSum(*indices):
-		return sum(a*b for a, b in zip(indices, denominations))
-
-	money = np.fromfunction(coinSum, axes)
 	return min(zip(*np.nonzero(money == target)), key=sum)
 
 
@@ -138,7 +145,7 @@ for func in (change_cached, change_direct, change_simplex):
 		then = now()
 		func((1,5,10,25,100), 189)
 		t = now() - then
-		print(f"{t} seconds")
+		print(f"{t:.4e} seconds")
 
 	except RecursionError:
 		print("Too big")
