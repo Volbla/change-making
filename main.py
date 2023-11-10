@@ -6,7 +6,33 @@ https://exercism.org/tracks/python/exercises/change
 
 from functools import cache
 import numpy as np
+from time import perf_counter_ns as now
+
 from typing import Sequence, Iterator
+
+
+def main():
+	test_denominations = (1, 5, 10, 25, 100)
+	test_target = 189
+	results: list[tuple[str,str]] = []
+
+	for func in (change_cached, change_direct, change_simplex):
+		func_name = func.__name__.removeprefix("change_")
+		then = now()
+
+		try:
+			func(test_denominations, test_target)
+		except RecursionError:
+			print(f"Recursion limit reached for {func_name}.")
+			continue
+
+		t = now() - then
+		results.append((func_name + ":", f"{t:,} ns"))
+
+	leftw = max(len(r[0]) for r in results)
+	rightw = max(len(r[1]) for r in results)
+	for r in results:
+		print(r[0].ljust(leftw), r[1].rjust(rightw))
 
 
 def change_coins(change: int) -> list[int]:
@@ -124,12 +150,13 @@ def change_simplex(denominations: Sequence[int], target: int) -> list[int] | Non
 		whose sum equals coinCount. This spans a simplex surface
 		in [rank]-dimensional space."""
 
-		def impl(seq: list[int]):
+		def impl(seq: list[int]) -> Iterator[list[int]]:
 			if len(seq) < rank - 1:
 				for x in range(coinCount - sum(seq) + 1):
 					yield from impl(seq + [x])
 			else:
 				yield seq + [coinCount - sum(seq)]
+
 		return impl([])
 
 	for coinCount in range(1, target // denominations[0] + 1):
@@ -138,14 +165,6 @@ def change_simplex(denominations: Sequence[int], target: int) -> list[int] | Non
 				return coordinates
 
 
-from time import perf_counter as now
-
-for func in (change_cached, change_direct, change_simplex):
-	try:
-		then = now()
-		func((1,5,10,25,100), 189)
-		t = now() - then
-		print(f"{t:.4e} seconds")
-
-	except RecursionError:
-		print("Too big")
+if __name__ == "__main__":
+	print()
+	main()
