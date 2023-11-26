@@ -36,7 +36,7 @@ def main():
 
 
 def change_coins(change: int) -> list[int]:
-	"""Is only guaranteed to work with a canonical coin system."""
+	"""Is only guaranteed to work with a so called canonical coin system."""
 
 	denominations = [1, 5, 10, 25, 100]
 
@@ -128,39 +128,45 @@ def change_direct(denominations: Sequence[int], target: int) -> tuple[int,...]:
 		else: #nobreak
 			axes.append(target // coin + 1)
 
-	# def coinSum(*indices):
-	# 	return sum(a*b for a, b in zip(indices, denominations))
-	# money = np.fromfunction(coinSum, axes)
-
-	# The same as above but slightly faster.
+	# Multiplying each index-value by its respective denomination,
+	# and getting the total value for each grid cell.
 	money = np.einsum("i..., i", np.indices(axes, dtype=int), denominations)
 
-	return min(zip(*np.nonzero(money == target)), key=sum)
+	# All indices of `money` where it equals the target value.
+	matches = np.nonzero(money == target)
+
+	# The lowest sum of indices is the the fewest coins used.
+	answer = min(zip(*matches), key=sum)
+
+	return answer
 
 
 def change_simplex(denominations: Sequence[int], target: int) -> list[int] | None:
 	"""Consider the array in the previous function, but traverse
 	its elements in order of how many coins they represent.
-	The first match will be the optimal answer."""
+	The first match will be the optimal answer.
 
-	rank = len(denominations)
+	This is slower than change_direct since that uses
+	numpy to speed up the bulk calculation.
+	"""
 
-	def simplexPoints(coinCount: int) -> Iterator[list[int]]:
+	def simplexPoints(total: int, dimensions: int) -> Iterator[list[int]]:
 		"""Iterates the set of all non-negative coordinates
-		whose sum equals coinCount. This spans a simplex surface
-		in [rank]-dimensional space."""
+		whose sum equals `total`. This spans a simplex surface
+		in n-dimensional space, i.e. a triangle in 3D,
+		a tetrahedron in 4D, etc."""
 
 		def impl(seq: list[int]) -> Iterator[list[int]]:
-			if len(seq) < rank - 1:
-				for x in range(coinCount - sum(seq) + 1):
+			if len(seq) < dimensions - 1:
+				for x in range(total - sum(seq) + 1):
 					yield from impl(seq + [x])
 			else:
-				yield seq + [coinCount - sum(seq)]
+				yield seq + [total - sum(seq)]
 
 		return impl([])
 
 	for coinCount in range(1, target // denominations[0] + 1):
-		for coordinates in simplexPoints(coinCount):
+		for coordinates in simplexPoints(coinCount, len(denominations)):
 			if sum(a*b for a, b in zip(coordinates, denominations)) == target:
 				return coordinates
 
