@@ -143,7 +143,7 @@ def change_direct(denominations: Sequence[int], target: int) -> tuple[int,...]:
 
 def change_simplex(denominations: Sequence[int], target: int) -> list[int] | None:
 	"""Consider the array in the previous function, but traverse
-	its elements in order of how many coins they represent.
+	the grid cells in order of how many coins they represent.
 	The first match will be the optimal answer.
 
 	This is slower than change_direct since that uses
