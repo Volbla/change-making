@@ -56,11 +56,11 @@ def change_general(denominations: Sequence[int], target: int) -> list[int]:
 		if current_total == target:
 			return coins
 
-		return min(
-			(impl(coins + [x])
+		return min((
+			impl(coins + [x])
 			for x in denominations
-			if current_total + x <= target)
-			, key=len
+			if current_total + x <= target
+			), key=len
 		)
 
 	return impl([])
@@ -76,11 +76,11 @@ def change_cached(denominations: Sequence[int], target: int) -> tuple[int,...]:
 		if current_total == target:
 			return coins
 
-		return min(
-			(impl(tuple(sorted(coins + (x,))))
+		return min((
+			impl(tuple(sorted(coins + (x,))))
 			for x in denominations
-			if current_total + x <= target)
-			, key=len
+			if current_total + x <= target
+			), key=len
 		)
 
 	return impl(())
@@ -99,11 +99,11 @@ def change_cached_manual(denominations: Sequence[int], target: int):
 		if current_total == target:
 			return coins
 
-		cache[coins] = min(
-			(impl(tuple(sorted(coins + (x,))))
+		cache[coins] = min((
+			impl(tuple(sorted(coins + (x,))))
 			for x in denominations
-			if current_total + x <= target)
-			, key=len
+			if current_total + x <= target
+			), key=len
 		)
 		return cache[coins]
 
