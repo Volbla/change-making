@@ -14,7 +14,7 @@ from typing import Sequence, Iterator
 
 
 def main():
-	test_denominations = (1, 5, 10, 25, 100)
+	test_denominations = (3, 8, 10, 25, 100)
 	test_target = 189
 	results: list[tuple[str,str]] = []
 
@@ -23,18 +23,24 @@ def main():
 		then = now()
 
 		try:
-			func(test_denominations, test_target)
+			result = func(test_denominations, test_target)
 		except RecursionError:
-			print(f"Recursion limit reached for {func_name}.")
+			print(f"Recursion limit reached for `{func_name}`.")
 			continue
+		except ValueError as e:
+			if e.args[0] == "min() arg is an empty sequence":
+				print(f"Failed implementation in `{func_name}`.")
+				continue
+			else:
+				raise
 
 		t = now() - then
-		results.append((func_name + ":", f"{t:,} ns"))
+		results.append((func_name + ":", f"{t:,} ns", result))
 
 	leftw = max(len(r[0]) for r in results)
 	rightw = max(len(r[1]) for r in results)
 	for r in results:
-		print(r[0].ljust(leftw), r[1].rjust(rightw))
+		print(r[0].ljust(leftw), r[1].rjust(rightw), r[2], sep="  ")
 
 
 def change_coins(change: int) -> list[int]:
