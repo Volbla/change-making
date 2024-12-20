@@ -181,7 +181,6 @@ def change_simplex(denominations: Sequence[int], target: int) -> list[int] | Non
 
 def change_simplex_np(denominations: Sequence[int], target: int) -> np.ndarray | None:
 	"""The previous function using numpy objects."""
-	global simplexPoints
 
 	def simplexPoints(total: int, dimensions: int) -> np.ndarray:
 		point_count = math.comb(total + dimensions - 1, dimensions - 1)
