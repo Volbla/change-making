@@ -6,6 +6,8 @@ https://exercism.org/tracks/python/exercises/change
 
 from functools import cache
 import numpy as np
+import numba
+import math
 from time import perf_counter_ns as now
 
 from typing import Sequence, Iterator
@@ -16,7 +18,7 @@ def main():
 	test_target = 189
 	results: list[tuple[str,str]] = []
 
-	for func in (change_cached, change_direct, change_simplex):
+	for func in (change_cached, change_direct, change_simplex, change_simplex_np):
 		func_name = func.__name__.removeprefix("change_")
 		then = now()
 
@@ -171,6 +173,50 @@ def change_simplex(denominations: Sequence[int], target: int) -> list[int] | Non
 				return coordinates
 
 
+def change_simplex_np(denominations: Sequence[int], target: int) -> np.ndarray | None:
+	"""The previous function using numpy objects."""
+	global simplexPoints
+
+	def simplexPoints(total: int, dimensions: int) -> np.ndarray:
+		point_count = math.comb(total + dimensions - 1, dimensions - 1)
+		coords = np.zeros((point_count, dimensions), dtype=int)
+
+		simplex_loop(coords, total, point_count, dimensions)
+		return coords
+
+	denominations = np.array(denominations, dtype=int)
+
+	for coinCount in range(1, target // denominations[0] + 1):
+		coordinates = simplexPoints(coinCount, len(denominations))
+		match = np.einsum("...i, i", coordinates, denominations) == target
+		if np.any(match):
+			return np.squeeze(coordinates[match])
+
+_sys_int = numba.extending.as_numba_type(int) # type:ignore
+_sys_np_int = np.dtype(int).name
+_signature = f"void({_sys_np_int}[:,:], {_sys_int}, {_sys_int}, {_sys_int})"
+
+@numba.njit(_signature, cache=True)
+def simplex_loop(coords, total, point_count, dimensions):
+	coords[0, -1] = total
+	for i in range(1, point_count):
+		coords[i] = coords[i - 1]
+
+		for j in range(dimensions - 1, -1, -1):
+			if coords[i, j] != 0:
+				break
+
+		coords[i, j-1] += 1
+		if j == dimensions - 1:
+			coords[i, j] -= 1
+		else:
+			coords[i, j:] = coords[0, j:]
+			coords[i, -1] -= sum(coords[i, :j])
+
+
 if __name__ == "__main__":
 	print()
+	# Despite setting eager compilation with a signature and setting cache=True,
+	# numba jitted functions still require a warmup run for max speed.
+	change_simplex_np((1,), 1)
 	main()
